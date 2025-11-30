@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QGroupBox, QProgressBar, QFrame
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMimeData, QUrl
-from PyQt6.QtGui import QAction, QPixmap, QDragEnterEvent, QDropEvent
+from PyQt6.QtGui import QAction, QPixmap, QDragEnterEvent, QDropEvent, QIcon
 
 from PIL import Image
 import pyperclip
@@ -441,6 +441,11 @@ class ComfyUIPromptExtractorUI(QMainWindow):
         
         self.setWindowTitle("ComfyUI Prompt Extractor v3.0")
         self.setGeometry(100, 100, 1000, 800)
+        
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         # Data storage
         self.current_files = []
@@ -1156,8 +1161,16 @@ def main():
     """Main entry point"""
     app = QApplication(sys.argv)
     app.setApplicationName("ComfyUI Prompt Extractor")
-    app.setOrganizationName("NinjaTech")
-    app.setOrganizationDomain("ninjatech.ai")
+    app.setOrganizationName("mamorett")
+    app.setOrganizationDomain("github.com/mamorett")
+    
+    # Set desktop file name for proper taskbar grouping and icon
+    app.setDesktopFileName("comfyui-prompt-extractor.desktop")
+    
+    # Set app icon
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
     
     window = ComfyUIPromptExtractorUI()
     window.show()
