@@ -1,0 +1,9 @@
+# Core dependencies
+PyQt6>=6.6.0
+Pillow>=10.0.0
+pyperclip>=1.8.2
+
+# Optional translation support
+translators>=5.8.0
+
+# For metadata extraction
