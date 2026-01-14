@@ -10,7 +10,9 @@ import json
 import glob
 import threading
 from datetime import datetime
+from datetime import datetime
 from typing import Dict, Any, List, Optional
+from extractor import PromptExtractor
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -39,22 +41,31 @@ class ExtractionThread(QThread):
     finished = pyqtSignal(list, list)
     error = pyqtSignal(str)
     
-    def __init__(self, file_paths, mode, extractor):
+    def __init__(self, file_paths, mode):
         super().__init__()
         self.file_paths = file_paths
         self.mode = mode
-        self.extractor = extractor
     
     def run(self):
         try:
+            # Create a fresh extractor instance for each run to ensure no state persistence
+            local_extractor = PromptExtractor()
             results = []
             for file_path in self.file_paths:
                 if file_path.lower().endswith('.json'):
-                    result = self.extractor.extract_positive_prompts_json(file_path)
+                    result = local_extractor.extract_positive_prompts_json(file_path)
+                    # Fallback to parameters/text if JSON method returns nothing
+                    if not result.get('positive_prompts'):
+                         try:
+                             text_result = local_extractor.extract_positive_prompts_text(file_path)
+                             if text_result.get('positive_prompts'):
+                                 result = text_result
+                         except Exception:
+                             pass
                 elif self.mode == "ComfyUI":
-                    result = self.extractor.extract_positive_prompts_comfyui(file_path)
+                    result = local_extractor.extract_positive_prompts_comfyui(file_path)
                 else:
-                    result = self.extractor.extract_positive_prompts_parameters(file_path)
+                    result = local_extractor.extract_positive_prompts_parameters(file_path)
                 results.append(result)
             
             self.finished.emit(results, self.file_paths)
@@ -100,7 +111,7 @@ class TranslationThread(QThread):
             self.error.emit(str(e))
 
 
-from extractor import PromptExtractor
+
 
 
 class DropFrame(QFrame):
@@ -167,7 +178,7 @@ class ComfyUIPromptExtractorUI(QMainWindow):
         self.current_translation_direction = None
         
         # Extractor
-        self.extractor = PromptExtractor()
+        # self.extractor = PromptExtractor()  # Removed: Created fresh in thread
         
         # Threads
         self.extraction_thread = None
@@ -458,7 +469,7 @@ class ComfyUIPromptExtractorUI(QMainWindow):
         self.disable_buttons()
         
         mode = self.mode_combo.currentText()
-        self.extraction_thread = ExtractionThread(file_paths, mode, self.extractor)
+        self.extraction_thread = ExtractionThread(file_paths, mode)
         self.extraction_thread.finished.connect(self.on_extraction_finished)
         self.extraction_thread.error.connect(self.on_extraction_error)
         self.extraction_thread.start()

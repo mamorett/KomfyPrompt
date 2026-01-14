@@ -4,11 +4,14 @@ A powerful tool to extract positive prompts from ComfyUI-generated PNG files, no
 
 ## Features
 
-- **Dual Extraction Modes**: 
+- **Command Line Interface**: Separate CLI tool for scripting and terminal usage
+- **Extraction Modes**: 
   - ComfyUI mode: Extracts from workflow/prompt metadata
   - Parameters mode: Extracts from parameters metadata and PNG properties
+  - JSON Support: Extracts directly from saved workflow JSON files
+  - Text Fallback: Automatically attempts to parse text content if strict JSON parsing fails
 - **Batch Processing**: Process multiple files or entire folders at once
-- **Drag & Drop Interface**: Simply drag PNG files or folders into the application
+- **Drag & Drop Interface**: Simply drag PNG or JSON files, or folders into the application
 - **Image Thumbnails**: Preview images before extraction
 - **Translation Support**: Translate prompts between English and Chinese (requires translators library)
 - **Multiple Translator Engines**: Choose from alibaba, bing, google, baidu, youdao, or deepl
@@ -20,7 +23,7 @@ A powerful tool to extract positive prompts from ComfyUI-generated PNG files, no
 ### Prerequisites
 
 - Python 3.8 or higher
-- Qt6 with QtQuick and QtQuick.Controls (no Kirigami required)
+- PyQt6 (for GUI)
 - Works on any desktop environment (KDE, GNOME, XFCE, etc.)
 
 ### Install Dependencies
@@ -39,22 +42,41 @@ pip install translators
 
 ## Usage
 
-### Running the Application
+### Graphical Interface (GUI)
+
+Run the main application:
 
 ```bash
 python main.py
 ```
 
-### Basic Workflow
+### Command Line Interface (CLI)
+
+Use the CLI tool for quick extractions or shell scripting:
+
+```bash
+# Extract from a single file
+python extract_prompts.py image.png
+
+# Extract from multiple files
+python extract_prompts.py workflow.json image.png
+
+# Use wildcards (shell expansion or internal globbing)
+python extract_prompts.py *.json
+python extract_prompts.py "images/*.png"
+```
+
+### Basic Workflow (GUI)
 
 1. **Load Files**: 
-   - Drag and drop PNG files or folders into the drop zone
+   - Drag and drop PNG/JSON files or folders into the drop zone
    - Or use "Browse File(s)..." or "Browse Folder..." buttons
    - Or use Ctrl+O keyboard shortcut
 
 2. **Select Extraction Mode**:
    - Choose between "ComfyUI" or "Parameters" mode
    - Toggle with Ctrl+E
+   - *Note: JSON files are automatically detected and processed regardless of mode setting.*
 
 3. **View Results**:
    - Extracted prompts appear in the "Extracted Prompts" tab
@@ -95,6 +117,12 @@ Extracts prompts from parameters metadata:
 - Falls back to PNG properties if parameters not found
 - Supports both JSON and text format parameters
 
+### Automatic JSON Handling
+
+- Detecting `.json` files automatically triggers JSON extraction.
+- If standard workflow parsing fails, the extractor falls back to text-based parameter parsing logic.
+- This ensures extraction works even for unstructured JSON or text files masquerading as JSON.
+
 ## Translation Features
 
 When the `translators` library is installed, you can:
@@ -110,10 +138,12 @@ Translation state is preserved when copying or saving prompts.
 
 ```
 .
-├── main.py           # Main application file with backend logic
-├── main.qml          # QML UI definition
-├── requirements.txt  # Python dependencies
-└── README.md         # This file
+├── main.py            # Main GUI application
+├── extract_prompts.py # CLI entry point
+├── extractor.py       # Core extraction logic (shared)
+├── icon.png           # Application icon
+├── requirements.txt   # Python dependencies
+└── README.md          # This file
 ```
 
 ## Technical Details
@@ -121,7 +151,8 @@ Translation state is preserved when copying or saving prompts.
 ### Architecture
 
 - **Backend**: Python with PyQt6
-- **UI Framework**: Qt Quick (QML) with Qt Quick Controls
+- **UI Framework**: PyQt6 Widgets
+- **Core Logic**: Shared `PromptExtractor` class for consistent behavior across CLI and GUI
 - **Image Processing**: Pillow (PIL)
 - **Clipboard**: pyperclip
 - **Translation**: translators library (optional)
@@ -131,10 +162,14 @@ Translation state is preserved when copying or saving prompts.
 The application uses QThread for:
 - File extraction operations (prevents UI freezing)
 - Translation operations (handles network requests)
+- *Note: A fresh Extractor instance is created for every thread run to ensure state isolation.*
 
 ### Supported File Formats
 
-- Input: PNG files with embedded metadata
+- Input: 
+    - PNG files with embedded metadata (ComfyUI or generic parameters)
+    - JSON workflow files
+
 - Output: Plain text files (.txt)
 
 ## Troubleshooting

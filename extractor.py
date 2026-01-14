@@ -90,6 +90,45 @@ class PromptExtractor:
         except Exception as e:
             raise Exception(f"Error reading JSON file: {e}")
 
+    def extract_positive_prompts_text(self, file_path: str) -> Dict[str, Any]:
+        """Extract positive prompts from a text file (parameters format)"""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                text_content = f.read()
+
+            result = {
+                'file_info': {
+                    'filename': os.path.basename(file_path),
+                    'size': len(text_content),
+                    'mode': 'TEXT'
+                },
+                'positive_prompts': [],
+                'extraction_method': 'text_parameters'
+            }
+            
+            # Treat the whole text as 'parameters'
+            fake_metadata = {'parameters': text_content}
+            prompt_text = self.extract_positive_from_parameters_strict(fake_metadata)
+            
+            if prompt_text:
+                result['positive_prompts'].append({
+                    'text': prompt_text,
+                    'node_id': 'parameters',
+                    'node_type': 'parameters',
+                    'title': 'Parameters',
+                    'source': 'text_parameters'
+                })
+            
+            return result
+            
+        except Exception as e:
+            return {
+                'file_info': {'filename': os.path.basename(file_path)},
+                'positive_prompts': [],
+                'extraction_method': 'text_parameters_failed',
+                'error': str(e)
+            }
+
     def extract_positive_prompts_parameters(self, file_path: str) -> Dict[str, Any]:
         """Extract positive prompt using Parameters metadata and direct PNG properties"""
         try:
